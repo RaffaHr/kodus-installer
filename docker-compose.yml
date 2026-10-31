@@ -3,7 +3,9 @@ services:
     image: ${KODUS_REGISTRY:-ghcr.io/kodustech}/kodus-ai-web:${IMAGE_TAG:-latest}
     container_name: kodus-web-prod
     ports:
-      - "${WEB_PORT}:${WEB_PORT}"
+      # The image listens on PORT=3000 (Dockerfile.web); WEB_PORT only picks the
+      # host port, e.g. 3410 on Dokploy, whose own UI already holds host 3000.
+      - "${WEB_PORT:-3000}:3000"
     environment:
       - NODE_ENV=production
     networks:
@@ -65,6 +67,9 @@ services:
       # race on CREATE TYPE (duplicate key pg_type_typname_nsp_index) and
       # crash-loop the first boot. Override the .env default to false here.
       - RUN_MIGRATIONS=false
+      # Seeds need the schema the api migrates first; running them here races
+      # the api on a fresh database (relation "automation" does not exist).
+      - RUN_SEEDS=false
     networks:
       - shared-network
       - kodus-backend-services
@@ -106,6 +111,9 @@ services:
       - OBSERVABILITY_MONGO_ENABLED=${OBSERVABILITY_MONGO_ENABLED:-false}
       # Migrations belong to `api` only — see the note on the `worker` service.
       - RUN_MIGRATIONS=false
+      # Seeds need the schema the api migrates first; running them here races
+      # the api on a fresh database (relation "automation" does not exist).
+      - RUN_SEEDS=false
     networks:
       - shared-network
       - kodus-backend-services
@@ -139,6 +147,9 @@ services:
       - OBSERVABILITY_MONGO_ENABLED=${OBSERVABILITY_MONGO_ENABLED:-false}
       # Migrations belong to `api` only — see the note on the `worker` service.
       - RUN_MIGRATIONS=false
+      # Seeds need the schema the api migrates first; running them here races
+      # the api on a fresh database (relation "automation" does not exist).
+      - RUN_SEEDS=false
     networks:
       - shared-network
       - kodus-backend-services
@@ -154,6 +165,11 @@ services:
         condition: service_healthy
 
   kodus-mcp-manager:
+    # Opt-in (install.sh only starts it when API_MCP_SERVER_ENABLED=true): a
+    # plain `docker compose up`, as Dokploy runs, must not boot it by default.
+    # Enable with COMPOSE_PROFILES=mcp.
+    profiles:
+      - mcp
     image: ${KODUS_REGISTRY:-ghcr.io/kodustech}/kodus-mcp-manager:${IMAGE_TAG:-latest}
     platform: linux/amd64
     container_name: kodus-mcp-manager
@@ -286,14 +302,15 @@ volumes:
   pgdata:
   mongodbdata:
 
+# Created by compose itself (install.sh used to pre-create them as external),
+# so a plain `docker compose up` (e.g. Dokploy) boots without a manual step.
 networks:
   shared-network:
-    external: true
+    driver: bridge
+    name: shared-network
   monitoring-network:
     driver: bridge
     name: monitoring-network
-    external: true
   kodus-backend-services:
     driver: bridge
     name: kodus-backend-services
-    external: true

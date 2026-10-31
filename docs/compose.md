@@ -81,6 +81,22 @@ MongoDB connection.
   docker compose --profile analytics up -d worker-analytics
   ```
 
+### Compose-only deployments (Dokploy, Coolify, Portainer)
+
+These platforms run a plain `docker compose up -d` and never run `install.sh`.
+The compose file creates its own networks and starts the same services
+`install.sh` does, so only what the script decided at runtime has to go in the
+platform's environment (which becomes `.env`):
+
+| Set | When |
+|-----|------|
+| `KODUS_MONGO_IMAGE=docker.io/mongo:8.2.11` | Docker kernel is 6.19+ (`docker info --format '{{.KernelVersion}}'`): MongoDB 8.3 does not start there. Only on a new install; 8.2 cannot open 8.3 data. |
+| `COMPOSE_PROFILES=mcp` | `API_MCP_SERVER_ENABLED=true`. Use `mcp,analytics` with the analytics worker. Also makes `pull`/`up` include the service. |
+| `WEB_PORT` ≠ 3000 | The platform's own UI holds host port 3000 (Dokploy does). Only the host port changes; the container still listens on 3000, which is the port to give the platform's domain/router. |
+
+`USE_LOCAL_DB` / `USE_LOCAL_RABBITMQ=false` are only read by `install.sh`; with
+external datastores, remove the bundled services from your copy of the compose file.
+
 ## Your first review
 
 Once the stack is healthy:
