@@ -250,7 +250,10 @@ services:
       interval: 5s
       timeout: 3s
       retries: 5
-      start_period: 30s
+      # First boot runs initdb plus a socket-only temp server that this TCP probe
+      # cannot see; on slow disks that alone took ~75s. Failures inside the start
+      # period do not count, and the first success still marks it healthy at once.
+      start_period: 180s
 
   db_kodus_mongodb:
     # Pinned, never floating: `mongo:8` moved under existing installs and is how
@@ -293,7 +296,7 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
-      start_period: 40s
+      start_period: 180s
 
 volumes:
   log_volume:
