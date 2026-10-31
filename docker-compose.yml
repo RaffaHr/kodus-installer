@@ -26,7 +26,8 @@ services:
         max-size: "200m"
         max-file: "10"
     ports:
-      - "3001:3001"
+      # Host side only; the web and every service still reach the api on 3001.
+      - "${KODUS_API_HOST_PORT:-3001}:3001"
     environment:
       - ENV=production
       - NODE_ENV=production
@@ -139,7 +140,8 @@ services:
         max-size: "200m"
         max-file: "10"
     ports:
-      - "${API_WEBHOOKS_PORT:-3332}:${API_WEBHOOKS_PORT:-3332}"
+      # Host side only (KODUS_WEBHOOKS_HOST_PORT); the container listens on API_WEBHOOKS_PORT.
+      - "${KODUS_WEBHOOKS_HOST_PORT:-${API_WEBHOOKS_PORT:-3332}}:${API_WEBHOOKS_PORT:-3332}"
     environment:
       - ENV=production
       - NODE_ENV=production

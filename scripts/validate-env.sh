@@ -145,7 +145,12 @@ get_type() {
 # Read only by this repo's docker-compose.yml / scripts, never by kodus-ai, so
 # they are not in the schema synced from kodus-ai. scripts/install.sh writes
 # KODUS_MONGO_IMAGE itself on Linux kernels 6.19+.
-INSTALLER_ONLY_VARS="IMAGE_TAG KODUS_MONGO_IMAGE"
+INSTALLER_ONLY_VARS="IMAGE_TAG KODUS_MONGO_IMAGE KODUS_API_HOST_PORT KODUS_WEBHOOKS_HOST_PORT COMPOSE_PROFILES"
+
+# service:VAR pairs docker-compose.yml pins under `environment:`, overriding
+# .env for that service only (api still reads RUN_* and worker WORKER_ROLE).
+# shortcut: kept by hand; extend it when the compose file pins another var.
+COMPOSE_PINNED_VARS="worker:RUN_MIGRATIONS worker:RUN_SEEDS webhooks:RUN_MIGRATIONS webhooks:RUN_SEEDS worker-analytics:RUN_MIGRATIONS worker-analytics:RUN_SEEDS worker-analytics:WORKER_ROLE"
 
 is_in_schema() {
     local target=$1
@@ -442,6 +447,9 @@ else
                 drift=0
                 compared=0
                 for var in $USER_VARS; do
+                    # Pinned for this service in docker-compose.yml: differing
+                    # from .env is the design, not drift.
+                    case " $COMPOSE_PINNED_VARS " in *" $service:$var "*) continue ;; esac
                     container_line=$(grep -m1 "^${var}=" "$envs_tmp" 2>/dev/null || true)
                     [ -z "$container_line" ] && continue
                     compared=$((compared + 1))

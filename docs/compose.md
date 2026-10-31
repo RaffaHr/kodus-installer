@@ -93,6 +93,7 @@ platform's environment (which becomes `.env`):
 | `KODUS_MONGO_IMAGE=docker.io/mongo:8.2.11` | Docker kernel is 6.19+ (`docker info --format '{{.KernelVersion}}'`): MongoDB 8.3 does not start there. Only on a new install; 8.2 cannot open 8.3 data. |
 | `COMPOSE_PROFILES=mcp` | `API_MCP_SERVER_ENABLED=true`. Use `mcp,analytics` with the analytics worker. Also makes `pull`/`up` include the service. |
 | `WEB_PORT` ≠ 3000 | The platform's own UI holds host port 3000 (Dokploy does). Only the host port changes; the container still listens on 3000, which is the port to give the platform's domain/router. |
+| `KODUS_API_HOST_PORT`, `KODUS_WEBHOOKS_HOST_PORT` | Host ports for the api (default 3001) and webhooks (default `API_WEBHOOKS_PORT`, 3332). Containers keep listening on 3001/3332; update `API_URL` and the `*_CODE_MANAGEMENT_WEBHOOK` URLs to the new host ports. |
 
 `USE_LOCAL_DB` / `USE_LOCAL_RABBITMQ=false` are only read by `install.sh`; with
 external datastores, remove the bundled services from your copy of the compose file.
@@ -185,9 +186,9 @@ and prints no secret, so the output can be pasted into a support thread.
 | Port | Service |
 |------|---------|
 | 3000 | web UI |
-| 3001 | api |
+| 3001 | api (host port: `KODUS_API_HOST_PORT`) |
 | 3101 | mcp-manager (when enabled) |
-| 3332 | webhooks |
+| 3332 | webhooks (host port: `KODUS_WEBHOOKS_HOST_PORT`) |
 | 5432 | PostgreSQL |
 | 27017 | MongoDB |
 | 5672 | RabbitMQ (AMQP) |

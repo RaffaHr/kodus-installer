@@ -590,8 +590,9 @@ http_check_optional() {
 }
 
 web_port=${WEB_PORT:-3000}
-api_port=${API_PORT:-3001}
-webhooks_port=${API_WEBHOOKS_PORT:-${WEBHOOKS_PORT:-3332}}
+# Host ports the compose file publishes (KODUS_*_HOST_PORT override the defaults).
+api_port=${KODUS_API_HOST_PORT:-3001}
+webhooks_port=${KODUS_WEBHOOKS_HOST_PORT:-${API_WEBHOOKS_PORT:-${WEBHOOKS_PORT:-3332}}}
 
 http_check "kodus-web" "http://localhost:${web_port}/health"
 http_check "api" "http://localhost:${api_port}/health"
